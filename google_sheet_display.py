@@ -1,6 +1,9 @@
 import streamlit as st
 import pandas as pd
+import requests
 from io import StringIO
+
+N8N_WEBHOOK_URL = "https://emeraldlabs.app.n8n.cloud/webhook-test/c6cfce9c-85ec-4fb3-b012-f846ec8c045d"
 
 st.set_page_config(page_title="Manor Bill Upload", layout="wide")
 
@@ -61,6 +64,9 @@ if uploaded_file is not None and "df" not in st.session_state:
     st.session_state["df"] = load_file(uploaded_file)
     st.session_state["original_filename"] = uploaded_file.name
 
+
+
+
 if "df" in st.session_state:
     st.success(f"Loaded file: **{st.session_state['original_filename']}**")
 
@@ -78,6 +84,19 @@ if "df" in st.session_state:
     if st.button("Save changes"):
         st.session_state["df"] = edited_df
         st.toast("Changes saved to session ✔️")
+
+        # 🔁 ALSO send edited sheet to n8n as CSV
+        csv_for_n8n = edited_df.to_csv(index=False).encode("utf-8")
+        files = {
+            "file": ("manor_bill_edited.csv", csv_for_n8n, "text/csv"),
+        }
+
+        try:
+            resp = requests.post(N8N_WEBHOOK_URL, files=files)
+            resp.raise_for_status()
+            st.toast("Sent to n8n ✅")
+        except Exception as e:
+            st.error(f"Failed to send to n8n: {e}")
 
     # 4. Download edited version as CSV
     st.write("### Download edited file")
