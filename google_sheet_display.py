@@ -99,12 +99,14 @@ if "df" in st.session_state:
         + "_edited.csv"
     )
 
-    st.download_button(
-        label="⬇️ Download as CSV",
-        data=csv_data,          # ✅ just the bytes
-        file_name=default_name,
-        mime="text/csv",
-    )
+    rowing = st.columns((1,3.5))
+    with rowing[0]:
+        st.download_button(
+            label="⬇️ Download as CSV",
+            data=csv_data,          # ✅ just the bytes
+            file_name=st.text_input("File Name:") + ".csv",
+            mime="text/csv",
+        )
 
     # Optional info
     # st.write("### Basic info")
@@ -114,4 +116,3 @@ if "df" in st.session_state:
     # st.write(list(st.session_state["df"].columns))
 else:
     st.info("👆 Upload an image to get started.")
-
