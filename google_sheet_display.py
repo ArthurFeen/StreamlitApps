@@ -2,6 +2,10 @@ import streamlit as st
 import pandas as pd
 import requests
 from io import StringIO
+import shared_state
+
+
+N8N_WEBHOOK_URL = "https://emeraldlabs.app.n8n.cloud/webhook/invoice-upload-image"
 
 st.set_page_config(page_title="Manor Bill Upload", layout="wide")
 
@@ -33,8 +37,6 @@ striped_bg_css = """
 
 st.markdown(striped_bg_css, unsafe_allow_html=True)
 
-
-
 st.title("Manor Bill Upload 📊")
 st.write(
     "Upload a Google Sheet that you've downloaded as **CSV** or **Excel**, "
@@ -42,25 +44,28 @@ st.write(
 )
 
 uploaded_file = st.file_uploader(
-    "Upload your file (.csv, .xlsx, .xls)",
-    type=["csv", "xlsx", "xls"],
+    "Upload an image",
+    type=["jpg", "jpeg", "png", "heic", "webp"],
     accept_multiple_files=False,
 )
 
-# Helper: load uploaded file into a DataFrame
-def load_file(file):
-    filename = file.name.lower()
-    if filename.endswith(".csv"):
-        string_data = StringIO(file.getvalue().decode("utf-8"))
-        df = pd.read_csv(string_data)
-    else:
-        df = pd.read_excel(file)
-    return df
+if uploaded_file and st.button("Convert to sheet"):
+    files = {"file": (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)}
 
-# 1. Load file into session_state once
-if uploaded_file is not None and "df" not in st.session_state:
-    st.session_state["df"] = load_file(uploaded_file)
-    st.session_state["original_filename"] = uploaded_file.name
+    r = requests.post(N8N_WEBHOOK_URL, files=files, timeout=60)
+
+    st.write("n8n status:", r.status_code)
+    st.write(r.text)
+    r.raise_for_status()
+
+    csv_text = r.text.strip()                 # remove leading/trailing whitespace/newlines
+    csv_text = csv_text.rstrip('"\', \n\r\t') # remove stray trailing quote/comma/backslash etc.
+    df = pd.read_csv(StringIO(csv_text))
+
+    st.session_state["df"] = df
+    st.session_state["original_filename"] = "image_extracted.csv"
+    st.success("CSV loaded into dataframe!")
+
 
 if "df" in st.session_state:
     st.success(f"Loaded file: **{st.session_state['original_filename']}**")
@@ -79,6 +84,12 @@ if "df" in st.session_state:
     if st.button("Save changes"):
         st.session_state["df"] = edited_df
         st.toast("Changes saved to session ✔️")
+
+        # 🔁 ALSO send edited sheet to n8n as CSV
+        csv_for_n8n = edited_df.to_csv(index=False).encode("utf-8")
+        files = {
+            "file": ("manor_bill_edited.csv", csv_for_n8n, "text/csv"),
+        }
 
     # 4. Download edited version as CSV
     st.write("### Download edited file")
