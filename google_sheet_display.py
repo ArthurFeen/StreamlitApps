@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import requests
 from io import StringIO
+import shared_state
 
 
 N8N_WEBHOOK_URL = "https://emeraldlabs.app.n8n.cloud/webhook/invoice-upload-image"
@@ -38,8 +39,7 @@ st.markdown(striped_bg_css, unsafe_allow_html=True)
 
 st.title("Manor Bill Upload 📊")
 st.write(
-    "Upload a Google Sheet that you've downloaded as **CSV** or **Excel**, "
-    "edit it directly in the browser, and download the updated file."
+    "Upload an image and convert it into an excel sheet that you can download."
 )
 
 uploaded_file = st.file_uploader(
@@ -53,8 +53,8 @@ if uploaded_file and st.button("Convert to sheet"):
 
     r = requests.post(N8N_WEBHOOK_URL, files=files, timeout=60)
 
-    st.write("n8n status:", r.status_code)
-    st.write(r.text)
+    # st.write("n8n status:", r.status_code)
+    # st.write(r.text)
     r.raise_for_status()
 
     csv_text = r.text.strip()                 # remove leading/trailing whitespace/newlines
@@ -63,11 +63,11 @@ if uploaded_file and st.button("Convert to sheet"):
 
     st.session_state["df"] = df
     st.session_state["original_filename"] = "image_extracted.csv"
-    st.success("CSV loaded into dataframe!")
+    #st.success("CSV loaded into dataframe!")
 
 
 if "df" in st.session_state:
-    st.success(f"Loaded file: **{st.session_state['original_filename']}**")
+    #st.success(f"Loaded file: **{st.session_state['original_filename']}**")
 
     st.write("### Edit your sheet")
 
@@ -108,11 +108,10 @@ if "df" in st.session_state:
     )
 
     # Optional info
-    st.write("### Basic info")
-    st.write(f"- Rows: {st.session_state['df'].shape[0]}")
-    st.write(f"- Columns: {st.session_state['df'].shape[1]}")
-    st.write("#### Column names")
-    st.write(list(st.session_state["df"].columns))
+    # st.write("### Basic info")
+    # st.write(f"- Rows: {st.session_state['df'].shape[0]}")
+    # st.write(f"- Columns: {st.session_state['df'].shape[1]}")
+    # st.write("#### Column names")
+    # st.write(list(st.session_state["df"].columns))
 else:
-    st.info("👆 Upload a CSV or Excel export of your Google Sheet to get started.")
-
+    st.info("👆 Upload an image to get started.")
