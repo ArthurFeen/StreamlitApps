@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import requests
 from io import StringIO
-import shared_state
 
 
 N8N_WEBHOOK_URL = "https://emeraldlabs.app.n8n.cloud/webhook/invoice-upload-image"
@@ -115,3 +114,4 @@ if "df" in st.session_state:
     # st.write(list(st.session_state["df"].columns))
 else:
     st.info("👆 Upload an image to get started.")
+
